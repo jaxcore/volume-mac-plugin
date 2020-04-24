@@ -1,5 +1,10 @@
 const Jaxcore = require('jaxcore');
-var child_process = require('child_process');
+
+
+var audioDevice;
+if (process.platform === "win32") audioDevice = require('./lib/windows');
+if (process.platform === "darwin") audioDevice = require('./lib/darwin');
+if (process.platform === "linux") audioDevice = require('./lib/linux');
 
 const schema = {
 	id: {
@@ -51,6 +56,8 @@ class VolumeService extends Jaxcore.Service {
 		// this.createStore('Volume Store', true);
 		this.log = Jaxcore.createLogger('Volume');
 		this.log('created');
+		
+		audioDevice.init();
 		
 		// this.id = this.state.id;
 		// this.setStates(, defaults);
@@ -135,22 +142,7 @@ class VolumeService extends Jaxcore.Service {
 	}
 	
 	_getVolume(callback) {
-		child_process.execFile('/usr/bin/osascript', ['-e', 'get volume settings'], (error, stdout, stderr) => {
-			if (error) {
-				throw error;
-			}
-			var data = stdout.toString();
-			var m = data.match(/output volume:(\d+),/);
-			if (m) {
-				var volume = parseInt(m[1]);
-				callback(volume);
-			}
-			else {
-				this.log('_getVolume error, no volume');
-				callback();
-			}
-			
-		});
+		audioDevice.getVolume(callback);
 	}
 	
 	getVolume(callback) {
@@ -197,10 +189,13 @@ class VolumeService extends Jaxcore.Service {
 		var volume = this.state.volume;
 		this.log('_writeVolume', volume);
 		this.isSettingVolume = true;
-		child_process.execFile('/usr/bin/osascript', ['-e', 'set volume output volume ' + volume.toString()], (error, stdout, stderr) => {
+		
+		
+		
+		audioDevice.setVolume(volume, () => {
 			this.isSettingVolume = false;
 			
-			this.log('wroteVolume ' + volume + ' _volumeQueued = ' + this.state.volume, stdout.toString());
+			// this.log('wroteVolume ' + volume + ' _volumeQueued = ' + this.state.volume, stdout.toString());
 			
 			if (volume !== this.state.volume) {
 				this.log('_writeVolume and wroteVolume do NOT MATCH');
@@ -228,21 +223,8 @@ class VolumeService extends Jaxcore.Service {
 	}
 	
 	getMuted(callback) {
-		child_process.execFile('/usr/bin/osascript', ['-e', 'output muted of (get volume settings)'], (error, stdout, stderr) => {
+		audioDevice.getMuted(muted => {
 			if (this.lastVolumeTime && new Date().getTime() - this.lastVolumeTime > 500) {
-				var data = stdout.toString().trim();
-				
-				var muted = null;
-				if (data === 'true') {
-					muted = true;
-				}
-				else if (data === 'false') {
-					muted = false;
-				}
-				else {
-					this.log('getMuted error: [[' + data + ']]');
-					return;
-				}
 				this._muteChanged(muted);
 				if (callback) callback(muted);
 			}
@@ -261,7 +243,7 @@ class VolumeService extends Jaxcore.Service {
 	
 	setMuted(muted) {
 		muted = !!muted;
-		child_process.execFile('/usr/bin/osascript', ['-e', 'set volume output muted ' + (muted ? 'true' : 'false')], (error, stdout, stderr) => {
+		audioDevice.setMuted(muted, () => {
 			this._muteChanged(muted);
 		});
 	}

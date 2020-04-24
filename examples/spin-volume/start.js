@@ -6,12 +6,14 @@ jaxcore.addPlugin(require('jaxcore-desktop-plugin'));
 jaxcore.addPlugin(require('../../')); // jaxcore-volume-mac-plugin
 
 jaxcore.defineService('Volume', 'volume', {});
+jaxcore.defineService('Keyboard', 'keyboard', {});
 
 jaxcore.defineAdapter('Spin Volume', {
 	adapterType: 'spin-volume',
 	deviceType: 'spin',
 	serviceProfiles: [
-		'Volume'
+		'Volume',
+		'Keyboard'
 	]
 });
 

@@ -36,7 +36,13 @@ class VolumeAdapter extends Jaxcore.Adapter {
 		
 		this.addEvents(spin, {
 			spin: function (diff, spinTime) {
+				if (this.state.disabled) {
+					this.log('ADAPTER DISABLED ------- spin', diff);
+					return;
+				}
+				
 				this.log('spin rotate', diff);
+				
 				
 				if (spin.state.knobPushed) {
 					if (!volume.state.muted) {
@@ -72,12 +78,27 @@ class VolumeAdapter extends Jaxcore.Adapter {
 				}
 			},
 			knob: function (pushed) {
+				if (this.state.disabled) {
+					this.log('ADAPTER DISABLED ------- knob', pushed);
+					return;
+				}
+				
+				if (pushed && spin.state.knobPushed) {
+					this.setState({didBothPush: true});
+					return;
+				}
+				
 				this.log('knob', pushed);
 				if (pushed) {
 					this.setState({didKnobSpin: false});
 					this.setState({knobPushPosition: spin.state.spinPosition});
 				}
 				else {
+					if (this.state.didBothPush) {
+						this.setState({didBothPush: false});
+						return;
+					}
+					
 					if (this.state.didKnobSpin) {
 						this.stopRewind();
 						this.stopFastForward();
@@ -89,8 +110,22 @@ class VolumeAdapter extends Jaxcore.Adapter {
 				}
 			},
 			button: function (pushed) {
+				if (this.state.disabled) {
+					this.log('ADAPTER DISABLED ------- button', pushed);
+					return;
+				}
+				
+				if (pushed && spin.state.knobPushed) {
+					this.setState({didBothPush: true});
+					return;
+				}
+				
 				this.log('button', pushed);
-				if (pushed) {
+				if (!pushed) {
+					if (this.state.didBothPush) {
+						this.setState({didBothPush: false});
+						return;
+					}
 					// this.log('keypress play');
 					keyboard.keyPress('audio_play');
 					spin.flash(theme.secondary);

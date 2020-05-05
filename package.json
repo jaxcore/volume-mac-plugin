@@ -7,6 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "win-audio": "^2.0.2"
   },
   "author": "Dan Steinman",
   "license": "MIT"

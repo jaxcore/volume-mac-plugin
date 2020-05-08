@@ -73,6 +73,9 @@ class VolumeAdapter extends Jaxcore.Adapter {
 						}
 					}
 					else {
+						// console.log('diff', diff);
+						// let bdiff = spin.buffer(diff, 1, 2);
+						// volume.changeVolume(bdiff, spinTime);
 						volume.changeVolume(diff, spinTime);
 					}
 				}
